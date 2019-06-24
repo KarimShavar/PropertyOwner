@@ -2,20 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
-using NUnit.Framework.Constraints;
-using NUnit.Framework.Interfaces;
 using PropertyOwner.App.Data;
 using PropertyOwner.App.Data.Entities;
 using PropertyOwner.App.Data.Models;
 using PropertyOwner.App.Services;
 
-namespace Tests
+namespace PropertyOwner.Tests
 {
-    public class Tests
+    public class PropertyRepositoryTests
     {
         private IPropertyRepository Sut { get; set; }
         private SqliteConnection _connection { get; set; }
@@ -42,6 +39,7 @@ namespace Tests
         [TearDown]
         public void TearDown()
         {
+            Mapper.Reset();
             _connection.Close();
         }
 
@@ -318,7 +316,6 @@ namespace Tests
 
         private void InitialiseMapping()
         {
-            Mapper.Reset();
             Mapper.Initialize(config =>
             {
                 config.CreateMap<Tenant, TenantDto>()
