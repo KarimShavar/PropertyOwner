@@ -146,6 +146,70 @@ namespace PropertyOwner.Tests
             mockRepository.Verify(r => r.GetTenantsForProperty(propertyId), Times.Once);
         }
 
+        [Test]
+        public void CreateTenantForPropertyRerturnsBadRequestIfTenantIsNull()
+        {
+            // Arrange
+            TenantForCreationDto tenant = null;
+            var propertyId = new Guid();
+
+            var mockRepository = new Mock<IPropertyRepository>();
+            var sut = new TenantsController(mockRepository.Object);
+
+            // Act
+            var result = sut.CreateTenantForProperty(propertyId, tenant) as BadRequestResult;
+
+            // Assert
+            Assert.That(result, Is.TypeOf<BadRequestResult>());
+            Assert.That(result.StatusCode, Is.EqualTo(400));
+            mockRepository.Verify(r => r.PropertyExist(propertyId), Times.Never);
+        }
+
+        [Test]
+        public void CreateTenantForPropertyReturnsNotFoundIfPropertyDoesNotExist()
+        {
+            // Arrange
+            var propertyId = new Guid();
+            var newTenant = new Faker<TenantForCreationDto>().Generate();
+
+            var mockRepository = new Mock<IPropertyRepository>();
+            mockRepository.Setup(r => r.PropertyExist(propertyId))
+                .Returns(false);
+
+            var sut = new TenantsController(mockRepository.Object);
+
+            // Act
+            var result = sut.CreateTenantForProperty(propertyId, newTenant) as NotFoundResult;
+
+            // Assert
+            Assert.That(result, Is.TypeOf<NotFoundResult>());
+            Assert.That(result.StatusCode, Is.EqualTo(404));
+            mockRepository.Verify(r => r.PropertyExist(propertyId), Times.Once);
+        }
+
+        [Test]
+        public void CreateTenantForPropertyThrowsExceptionIfRepositorySaveFails()
+        {
+            // Arrange
+            var propertyId = new Guid();
+            var fakeTenant = new Faker<TenantForCreationDto>().Generate();
+
+            var mockRepository = new Mock<IPropertyRepository>();
+            mockRepository.Setup(r => r.PropertyExist(propertyId)).Returns(true);
+            mockRepository.Setup(r => r.Save()).Returns(false);
+
+            var sut = new TenantsController(mockRepository.Object);
+            var tenantDto = Mapper.Map<Tenant>(fakeTenant);
+
+            // Act
+            sut.CreateTenantForProperty(propertyId, fakeTenant);
+            // Assert
+            mockRepository.Verify(r => r.PropertyExist(propertyId), Times.Once);
+            mockRepository.Verify(r => r.AddTenantToProperty(propertyId, tenantDto), Times.Once);
+            Assert.Throws(Is.TypeOf<Exception>(),
+                () => sut.CreateTenantForProperty(propertyId, fakeTenant));
+        }
+
 
         private void InitializeMapping()
         {
