@@ -7,6 +7,7 @@ using Bogus;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using PropertyOwner.App.Controllers;
 using PropertyOwner.App.Data.Entities;
 using PropertyOwner.App.Data.Models;
@@ -203,14 +204,39 @@ namespace PropertyOwner.Tests
 
             // Act
             sut.CreateTenantForProperty(propertyId, fakeTenant);
+            
             // Assert
             mockRepository.Verify(r => r.PropertyExist(propertyId), Times.Once);
-            mockRepository.Verify(r => r.AddTenantToProperty(propertyId, tenantDto), Times.Once);
-            Assert.Throws(Is.TypeOf<Exception>(),
+            Assert.Throws<Exception>(
                 () => sut.CreateTenantForProperty(propertyId, fakeTenant));
         }
 
+        [Test]
+        public void CreateTenantForPropertyReturnsCreatedAtRouteNewRouteAndTenant()
+        {
+            // Arrange
+            var propertyId = new Guid();
+            var fakeTenant = new Faker<TenantForCreationDto>().Generate();
 
+            var mockRepository = new Mock<IPropertyRepository>();
+            mockRepository.Setup(r => r.PropertyExist(propertyId)).Returns(true);
+            mockRepository.Setup(r => r.Save()).Returns(true);
+
+            var sut = new TenantsController(mockRepository.Object);
+            var tenant = Mapper.Map<Tenant>(fakeTenant);
+            var tenantDto = Mapper.Map<TenantDto>(tenant);
+
+            // Act
+            var result = sut.CreateTenantForProperty(propertyId, fakeTenant) as CreatedAtRouteResult;
+
+            // Assert
+            mockRepository.Verify(r => r.PropertyExist(propertyId), Times.Once);
+            mockRepository.Verify(r => r.Save(), Times.Once);
+            Assert.That(result.StatusCode, Is.EqualTo(201));
+            Assert.That(result.RouteName, Is.EqualTo("GetTenant"));
+            Assert.That(result.Value, Is.TypeOf<TenantDto>());
+        } 
+        
         private void InitializeMapping()
         {
             Mapper.Reset();
