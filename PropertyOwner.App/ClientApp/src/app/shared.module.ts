@@ -12,7 +12,7 @@ import {
   MatToolbarModule
 } from '@angular/material';
 
-import { DashboardComponent } from './dashboard/dashboard.component';
+import { DashboardComponent } from './property/dashboard/dashboard.component';
 import { LayoutModule } from '@angular/cdk/layout';
 import { NavComponent } from './nav/nav.component';
 
